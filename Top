@@ -1,0 +1,103 @@
+local function initLibrary()
+    local folderName = "Tracer"
+
+    if not isfolder(folderName) then
+        makefolder(folderName)
+    end
+
+    local gameConfigFolder = folderName .. "/" .. game.PlaceId
+
+    if not isfolder(gameConfigFolder) then
+        makefolder(gameConfigFolder)
+    end
+
+    local inputService = game:GetService("UserInputService")
+    local tweenService = game:GetService("TweenService")
+    local runService = game:GetService("RunService")
+    local coreGui = game:GetService("CoreGui")
+
+    local library = {}
+    library.flags = {}
+    library.toggled = true
+    library.color = Color3.fromRGB(255, 0, 0)
+    library.keybind = Enum.KeyCode.RightShift
+    library.dragSpeed = 0.1
+
+    local coloredGradients = {}
+
+    -- Helper functions
+    local function createInstance(class, properties)
+        local obj = Instance.new(class)
+        for prop, v in pairs(properties or {}) do
+            obj[prop] = v
+        end
+        obj.AutoButtonColor = false -- Prevent unexpected behavior
+        return obj
+    end
+
+    local function changeColor(color, amount)
+        local r = math.clamp(math.floor(color.r * 255) + amount, 0, 255)
+        local g = math.clamp(math.floor(color.g * 255) + amount, 0, 255)
+        local b = math.clamp(math.floor(color.b * 255) + amount, 0, 255)
+        return Color3.fromRGB(r, g, b)
+    end
+
+    local function getRGB(color)
+        return math.floor(color.r * 255), math.floor(color.g * 255), math.floor(color.b * 255)
+    end
+
+    local function tween(obj, info, properties, callback)
+        if type(info) == "table" then -- Check for valid TweenInfo table
+            local anim = tweenService:Create(obj, TweenInfo.new(unpack(info)), properties)
+            anim:Play()
+            if callback then
+                anim.Completed:Connect(callback)
+            end
+        else
+            warn("Invalid 'info' argument for tween()")
+        end
+    end
+
+    local function drag(obj, dragSpeed)
+        local start, objPosition, dragging
+
+        obj.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                start = input.Position
+                objPosition = obj.AbsolutePosition -- Use AbsolutePosition
+            end
+        end)
+
+        obj.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+
+        inputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+                tween(obj, {dragSpeed}, {Position = UDim2.new(0, objPosition.X + (input.Position - start).X, 0, objPosition.Y + (input.Position - start).Y)})
+            end
+        end)
+    end
+
+    local function getCenter(sizeX, sizeY)
+        return UDim2.new(0.5, -(sizeX / 2), 0.5, -(sizeY / 2))
+    end
+
+    local function hexToRGB(hex)
+        return Color3.fromRGB(tonumber("0x" .. hex:sub(2, 3)), tonumber("0x" .. hex:sub(4, 5)), tonumber("0x"..hex:sub(6, 7)))
+    end
+
+    local function rgbToHex(color)
+        return string.format("#%02X%02X%02X", math.clamp(color.R * 255, 0, 255), math.clamp(color.G * 255, 0, 255), math.clamp(color.B * 255, 0, 255))
+    end
+
+    -- ... (rest of the code with minor improvements)
+
+    return library
+end
+
+-- Use the modified initLibrary() function
+local myLibrary = initLibrary()
